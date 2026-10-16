@@ -1,0 +1,124 @@
+---
+name: ade
+description: >-
+  The iii web console — chat, trace explorer, worker catalog, and the runtime
+  host every worker injects its own pages, renderers, and configuration forms
+  into. Read it before building or changing any console UI, and when an agent
+  must drive the operator's workspace (open or close a screen, propose a
+  working directory).
+---
+
+# console
+
+The console is a single Rust binary that serves the React SPA and proxies the
+engine WebSocket on one port (`http_port`, 3113 by default). It renders the
+chat (on the `harness` turn loop), the OpenTelemetry trace explorer, the worker
+catalog, and a tabbed workspace of floating panels the operator arranges. It is
+also the delivery host for **injectable UI**: any worker registers a
+`console:script` / `console:style` trigger whose `config.path` names an asset
+and whose `function_id` serves the bytes, and every open tab imports the module,
+calls its `setup(host)`, and hot-reloads it on re-registration. No console
+rebuild, no iframe.
+
+Reach for this worker in two situations. First, when a worker needs a face in
+the console — a page, a function-call or trigger-activity renderer, a settings
+form — build it against the three companion skills below rather than inventing
+markup. Second, when an agent should change what the operator is looking at:
+open a worker page beside the conversation, pin a chat, close a screen, or
+propose that the session follow a project created elsewhere.
+
+Prerequisites: the `configuration` worker (the console stores its own settings
+and every worker's configuration entry there). Chat needs `harness` and its
+stack; traces need the engine's OpenTelemetry export.
+
+## When to Use
+
+- A worker must ship a console page, renderer, or configuration form — read
+  `ade/injectable-ui` (the delivery contract) first, then
+  `ade/design-console-ui` (responsive UX and forms), with
+  `ade/design-system` open for every visual rule and number.
+- You changed a worker's UI and must prove it is loadable: read
+  `console::ui-manifest` and require an empty `warnings` array.
+- The user should watch something in the console: `console::workspace::open`
+  with `ext:<page>`, `workers`, `traces`, or a pinned `chat`.
+- You created or cloned a project in another directory and the user asked to
+  continue there: `console::working-directory::propose` (never just to inspect
+  a file).
+- You need to know what the operator currently sees: `console::workspace::list`.
+
+## Boundaries
+
+- The console renders; it does not own domain data. Injected UI acts by
+  calling its own worker's functions over `host.iii`, and configuration values
+  live in the `configuration` worker.
+- `console:assets` is the tab-side live-update subscription. Workers never
+  register it; register `console:script` / `console:style` only.
+- Injected styles are scoped under `[data-iii-ui="<worker>"]`; an unscoped
+  rule restyles the whole console and is reported as a manifest warning.
+- Register asset triggers through the SDK's Message path so they are
+  garbage-collected on disconnect — not through the durable
+  `engine::register_trigger`.
+- `workspace::open` reuses a tab that already shows the screen; it never
+  duplicates panels. Selection of the active tab is per browser tab and only
+  follows a function-driven activation, which every activating `open` stamps.
+  A page that asks for a panel of its own passes `relative_to` with its own
+  screen id, so the panel lands beside the page, in whichever tab shows it,
+  instead of beside the chat.
+- An injected page placing a screen for the operator in front of it calls
+  `host.panels.openScreen({ screen, relativeTo?, direction?, sizes? })`
+  (built-in screens like `traces` included): local and optimistic, no bus
+  round trip. Feature-detect it and fall back to `console::workspace::open`.
+- Native console UI (`ade/web`) and worker UI change in separate pull
+  requests; the shared component surface is `@iii-dev/console-ui`
+  (`packages/console-ui`) and its `index.d.ts` is the only API contract.
+
+## Functions
+
+- `console::status` — runtime knobs: `http_port`, `engine_url`, `version`; use for liveness and readiness.
+- `console::ui-manifest` — every injected asset currently loadable, with path, kind, content hash, and style-lint warnings; the authoritative check after registering UI.
+- `console::workspace::list` — the operator's workspace: tabs, columns, screens, column widths, and the active tab.
+- `console::workspace::open` — show a screen next to the conversation (`ext:<page>`, `workers`, `traces`, or a pinned `chat` by `session_id`). It lands right of the chat panel; `relative_to` names another mounted screen to sit beside and `direction` (`right`/`left`) picks the side. `sizes` sets the tab's column widths in the same write — read `workspace::list` first for the widths that are up.
+- `console::workspace::close` — remove a screen wherever it is shown; idempotent.
+- `console::working-directory::propose` — ask the operator to move the session (chat and paired shell) to a directory created or cloned elsewhere.
+- `console::ui-content` — the console's own content function for its injected catalog pages; internal.
+- `console::on-config-change`, `console::working-directory::inject-guidance`, `console::working-directory::stamp-session` — internal wiring; never call directly.
+
+## Reactive triggers
+
+The console owns four trigger types. Two are the injectable-UI contract a
+worker binds to ship UI; the third is tab-internal; the fourth reports layout
+changes.
+
+- `console:script` — an ESM JavaScript asset. `config: { path }` is the
+  identity (`<worker>/page.js`); the trigger's `function_id` is the worker's
+  content function returning `{ content, content_type? }` for `{ path }`.
+- `console:style` — a CSS asset with the same contract and a `.css` path.
+- `console:assets` — a tab's live-update subscription; the console registers
+  it itself.
+- `console::workspace::changed` — fires after every workspace layout write
+  (`open`, `close`, a browser's own edit), and once when a binding registers.
+  Empty config, empty event: a page that watches the layout binds it and
+  re-reads `console::workspace::list`.
+
+Bind the first two once per asset at worker startup, after the content
+function is registered. Re-registering the same path with different bytes
+hot-swaps the asset in every open tab; identical bytes are a no-op. Rust
+workers use the `iii-console-ui` crate (`ConsoleUi::new("<worker>").script(..).style(..).register(&iii)`),
+which also wires the `III_<WORKER>_UI_WATCH` development watcher; Node workers
+register the content function and the two triggers directly.
+
+## Skills shipped with this worker
+
+- `ade/injectable-ui` — the delivery contract for worker UI: project
+  layout, `setup(host)` and every slot, the wire contract, Rust and Node
+  registration, the shared build driver and its lint, scoped CSS, the
+  hooks/format/icon packages, hot reload, debugging, and the definition of done.
+- `ade/design-console-ui` — responsive UX and forms: archetypes, pane-width
+  (not viewport) behavior, phone drill-in and bottom sheets, state integrity,
+  configuration and provider forms, and the validation matrix.
+- `ade/design-system` — the iii Schematic design system: tokens, surface
+  ramp, typography, radius, elevation, motion, the canonical components, and
+  the one numbers table the other two skills link to.
+
+The migration of the remaining worker UIs onto the shared package is tracked
+in `docs/plans/2026-09-16-worker-ui-migration.md`.

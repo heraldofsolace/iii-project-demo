@@ -1,0 +1,142 @@
+{
+  "compose_path": "/home/aniket/iii/experiment-kanban/fixture-run/worker-compose.yaml",
+  "namespace": "default",
+  "containers": {
+    "ade": {
+      "pid": 46698,
+      "birth": {
+        "start_time": 71938
+      },
+      "status": "ready",
+      "started_at": 1792129863
+    },
+    "browser": {
+      "pid": 46623,
+      "birth": {
+        "start_time": 71933
+      },
+      "status": "ready",
+      "started_at": 1792129863
+    },
+    "context-manager": {
+      "pid": 46865,
+      "birth": {
+        "start_time": 72032
+      },
+      "status": "ready",
+      "started_at": 1792129864
+    },
+    "cron": {
+      "pid": 46439,
+      "birth": {
+        "start_time": 71932
+      },
+      "status": "ready",
+      "started_at": 1792129863
+    },
+    "harness": {
+      "pid": 47054,
+      "birth": {
+        "start_time": 72065
+      },
+      "status": "ready",
+      "started_at": 1792129864
+    },
+    "ide": {
+      "pid": 46624,
+      "birth": {
+        "start_time": 71933
+      },
+      "status": "ready",
+      "started_at": 1792129863
+    },
+    "iii-directory": {
+      "pid": 46543,
+      "birth": {
+        "start_time": 71932
+      },
+      "status": "ready",
+      "started_at": 1792129863
+    },
+    "judge": {
+      "pid": 46784,
+      "birth": {
+        "start_time": 71997
+      },
+      "status": "ready",
+      "started_at": 1792129864
+    },
+    "judge-typesafe": {
+      "pid": 46744,
+      "birth": {
+        "start_time": 71975
+      },
+      "status": "ready",
+      "started_at": 1792129863
+    },
+    "llm-router": {
+      "pid": 46808,
+      "birth": {
+        "start_time": 71997
+      },
+      "status": "ready",
+      "started_at": 1792129864
+    },
+    "provider-anthropic": {
+      "pid": 46864,
+      "birth": {
+        "start_time": 72031
+      },
+      "status": "ready",
+      "started_at": 1792129864
+    },
+    "provider-deepseek": {
+      "pid": 46898,
+      "birth": {
+        "start_time": 72032
+      },
+      "status": "ready",
+      "started_at": 1792129864
+    },
+    "provider-openai": {
+      "pid": 46934,
+      "birth": {
+        "start_time": 72032
+      },
+      "status": "ready",
+      "started_at": 1792129864
+    },
+    "provider-openai-codex": {
+      "pid": 47010,
+      "birth": {
+        "start_time": 72033
+      },
+      "status": "ready",
+      "started_at": 1792129864
+    },
+    "queue": {
+      "pid": 46518,
+      "birth": {
+        "start_time": 71932
+      },
+      "status": "ready",
+      "started_at": 1792129863
+    },
+    "session-manager": {
+      "pid": 46452,
+      "birth": {
+        "start_time": 71932
+      },
+      "status": "ready",
+      "started_at": 1792129863
+    },
+    "state": {
+      "pid": 46438,
+      "birth": {
+        "start_time": 71932
+      },
+      "status": "ready",
+      "started_at": 1792129863
+    }
+  }
+}
